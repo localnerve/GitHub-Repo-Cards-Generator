@@ -18,21 +18,26 @@ export async function getCachedData(user, repo) {
         const stmt = db.prepare(`SELECT * FROM cache WHERE
             LOWER(user) = LOWER(?) AND LOWER(repo_name) = LOWER(?)`);
         
-        const row = stmt.get(user, repo);
+        try {
+            const row = stmt.get(user, repo);
 
-        if (row) {
-            const data = {
-                stargazers_count: row.stars,
-                forks_count: row.forks,
-                description: row.description,
-                name: row.repo_name,
-                html_url: row.html_url,
-                language: row.language,
-                user: row.user
-            };
-            resolve({...data, timestamp: row.timestamp});
-        } else {
-            reject(`Failed to find ${user}/${repo}`);
+            if (row) {
+                const data = {
+                    stargazers_count: row.stars,
+                    forks_count: row.forks,
+                    description: row.description,
+                    name: row.repo_name,
+                    html_url: row.html_url,
+                    language: row.language,
+                    user: row.user
+                };
+                resolve({...data, timestamp: row.timestamp});
+            } else {
+                // console.info(`Failed to find ${user}/${repo} in cache`);
+                resolve();
+            }
+        } catch (e) {
+            reject(`getCachedData: ${e.message}`);
         }
     });
 }
