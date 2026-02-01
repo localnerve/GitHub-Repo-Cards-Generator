@@ -1,6 +1,6 @@
 name: 'github-card-generator'
 services:
-  github-card-generator:
+  web:
     build:
       context: ../
     container_name: ghc-web
