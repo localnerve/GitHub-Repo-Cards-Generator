@@ -1,0 +1,15 @@
+name: 'github-card-generator'
+services:
+  github-card-generator:
+    build:
+      context: ../
+    container_name: ghc-web
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - API_WINDOW=${API_WINDOW}
+      - API_LIMIT=${API_LIMIT}
+      - CACHE_LENGTH=${CACHE_LENGTH}
+      - PORT=${PORT}
+      - PUBLIC_URL=${PUBLIC_URL}
