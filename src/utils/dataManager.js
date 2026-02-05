@@ -1,8 +1,5 @@
-import fetch from 'node-fetch';
+import 'dotenv/config';
 import {db} from './database.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const CACHE_MINUTES = process.env.CACHE_LENGTH || 60; // Cache time in minutes
@@ -18,13 +15,12 @@ export async function hasCachedData(user, repo) {
 
 export async function getCachedData(user, repo) {
     return new Promise((resolve, reject) => {
-        db.get(`SELECT *
-                FROM cache
-                WHERE LOWER(user) = LOWER(?)
-                  AND LOWER(repo_name) = LOWER(?)`, [user, repo], (err, row) => {
-            if (err) {
-                return reject(err);
-            }
+        const stmt = db.prepare(`SELECT * FROM cache WHERE
+            LOWER(user) = LOWER(?) AND LOWER(repo_name) = LOWER(?)`);
+        
+        try {
+            const row = stmt.get(user, repo);
+
             if (row) {
                 const data = {
                     stargazers_count: row.stars,
@@ -37,30 +33,36 @@ export async function getCachedData(user, repo) {
                 };
                 resolve({...data, timestamp: row.timestamp});
             } else {
-                resolve(null);
+                // console.info(`Failed to find ${user}/${repo} in cache`);
+                resolve();
             }
-        });
+        } catch (e) {
+            reject(`getCachedData: ${e.message}`);
+        }
     });
 }
 
 export async function updateCache(user, repo, data) {
     return new Promise((resolve, reject) => {
-        db.run(`DELETE
-                FROM cache
-                WHERE user = ?
-                  AND repo_name = ?`, [user, repo], (err) => {
-            if (err) {
-                return reject(err);
-            }
-            db.run(`INSERT INTO cache (user, repo_name, stars, forks, description, html_url, language, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?,
-                            ?)`, [user, repo, data.stargazers_count, data.forks_count, data.description, data.html_url, data.language, Date.now()], (err) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve();
-            });
-        });
+        const deleteStmt = db.prepare(`DELETE
+            FROM cache WHERE user = ? AND repo_name = ?`);
+        const insertStmt = db.prepare(`INSERT INTO cache
+            (user, repo_name, stars, forks, description, html_url, language, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+
+        try {
+            deleteStmt.run(user, repo);
+        } catch (e) {
+            reject(e);
+        }
+
+        try {
+            insertStmt.run(user, repo, data.stargazers_count, data.forks_count, data.description, data.html_url, data.language, Date.now());
+        } catch (e) {
+            reject(e);
+        }
+
+        resolve();
     });
 }
 

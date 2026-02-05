@@ -1,5 +1,5 @@
 .env
-cache.db
+cache.db*
 /node_modules
 /.idea
-/docker/docker-compose.yml
+/.vscode

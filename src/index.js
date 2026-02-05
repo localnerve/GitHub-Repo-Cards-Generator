@@ -1,7 +1,6 @@
+import path from 'node:path';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { fileURLToPath } from 'url';
-import path, { dirname } from 'path';
 import { generateErrorSVG, generateSVG } from './utils/svgGenerator.js';
 import { hasCachedData, getCachedData, updateCache, getRepoData } from './utils/dataManager.js';
 
@@ -10,16 +9,15 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:3000';
 
 const API_WINDOW = process.env.API_WINDOW || 1; // Window in minutes
-const API_LIMIT = process.env.API_LIMIT || 1; // Max API calls per hour
+const API_LIMIT = process.env.API_LIMIT || 1; // Max API calls per window
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = import.meta.dirname;
 
 const app = express();
 
 const apiLimiter = rateLimit({
-    windowMs: API_WINDOW * 60 * 1000, // API_WINDOW hours in milliseconds
-    max: API_LIMIT, // limit each IP to API_LIMIT requests per windowMs
+    windowMs: API_WINDOW * 60 * 1000, // API_WINDOW minutes to milliseconds
+    limit: API_LIMIT, // limit each IP to API_LIMIT requests per windowMs
     message: "Too many requests created from this IP, please try again after " + API_WINDOW + " minutes"
 });
 
